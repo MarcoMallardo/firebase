@@ -66,17 +66,11 @@ class DetailsScreen extends ConsumerWidget {
         title: Text(movie.title),
         actions: [
           IconButton(
-            tooltip: 'Editar',
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              context.push('/edit', extra: movie);
-            },
-          ),
-          IconButton(
             tooltip: 'Eliminar',
             icon: const Icon(Icons.delete, color: Colors.redAccent),
             onPressed: () => _confirmDelete(context, ref, movie),
           ),
+
         ],
       ),
       body: SingleChildScrollView(
@@ -196,19 +190,6 @@ class DetailsScreen extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            context.push('/edit', extra: movie);
-                          },
-                          icon: const Icon(Icons.edit),
-                          label: const Text('Editar Película'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () => _confirmDelete(context, ref, movie),
                           icon: const Icon(Icons.delete_outline),
@@ -220,6 +201,7 @@ class DetailsScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
+
                     ],
                   ),
                 ],

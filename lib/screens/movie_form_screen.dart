@@ -6,9 +6,7 @@ import '../entities/movie.dart';
 import '../providers/movie_provider.dart';
 
 class MovieFormScreen extends ConsumerStatefulWidget {
-  final Movie? movie;
-
-  const MovieFormScreen({super.key, this.movie});
+  const MovieFormScreen({super.key});
 
   @override
   ConsumerState<MovieFormScreen> createState() => _MovieFormScreenState();
@@ -27,18 +25,13 @@ class _MovieFormScreenState extends ConsumerState<MovieFormScreen> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.movie?.title ?? '');
-    _directorController =
-        TextEditingController(text: widget.movie?.director ?? '');
-    _yearController = TextEditingController(
-        text: widget.movie != null ? widget.movie!.year.toString() : '');
-    _genreController = TextEditingController(text: widget.movie?.genre ?? '');
-    _ratingController = TextEditingController(
-        text: widget.movie != null ? widget.movie!.rating.toString() : '8.0');
-    _imageUrlController =
-        TextEditingController(text: widget.movie?.imageUrl ?? '');
-    _descriptionController =
-        TextEditingController(text: widget.movie?.description ?? '');
+    _titleController = TextEditingController();
+    _directorController = TextEditingController();
+    _yearController = TextEditingController();
+    _genreController = TextEditingController();
+    _ratingController = TextEditingController(text: '8.0');
+    _imageUrlController = TextEditingController();
+    _descriptionController = TextEditingController();
   }
 
   @override
@@ -63,46 +56,25 @@ class _MovieFormScreenState extends ConsumerState<MovieFormScreen> {
       final imageUrl = _imageUrlController.text.trim();
       final description = _descriptionController.text.trim();
 
-      if (widget.movie == null) {
-        // Alta de película
-        final newMovie = Movie(
-          id: const Uuid().v4(),
-          title: title,
-          director: director,
-          year: year,
-          genre: genre,
-          rating: rating,
-          imageUrl: imageUrl,
-          description: description,
-        );
-        ref.read(movieProvider.notifier).addMovie(newMovie);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Película "$title" agregada exitosamente'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      } else {
-        // Modificación de película
-        final updatedMovie = widget.movie!.copyWith(
-          title: title,
-          director: director,
-          year: year,
-          genre: genre,
-          rating: rating,
-          imageUrl: imageUrl,
-          description: description,
-        );
-        ref.read(movieProvider.notifier).editMovie(updatedMovie);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Película "$title" actualizada exitosamente'),
-            backgroundColor: Colors.blue,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      // Alta de película
+      final newMovie = Movie(
+        id: const Uuid().v4(),
+        title: title,
+        director: director,
+        year: year,
+        genre: genre,
+        rating: rating,
+        imageUrl: imageUrl,
+        description: description,
+      );
+      ref.read(movieProvider.notifier).addMovie(newMovie);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Película "$title" agregada exitosamente'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
 
       context.pop();
     }
@@ -110,12 +82,11 @@ class _MovieFormScreenState extends ConsumerState<MovieFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isEditing = widget.movie != null;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Editar Película' : 'Nueva Película'),
+        title: const Text('Nueva Película'),
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Form(
@@ -321,9 +292,9 @@ class _MovieFormScreenState extends ConsumerState<MovieFormScreen> {
               ElevatedButton.icon(
                 onPressed: _saveMovie,
                 icon: const Icon(Icons.save),
-                label: Text(
-                  isEditing ? 'Guardar Cambios' : 'Registrar Película',
-                  style: const TextStyle(
+                label: const Text(
+                  'Registrar Película',
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),

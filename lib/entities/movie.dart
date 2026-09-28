@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Movie {
   final String id;
   final String title;
@@ -38,6 +40,36 @@ class Movie {
       year: year ?? this.year,
       genre: genre ?? this.genre,
       rating: rating ?? this.rating,
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'imageUrl': imageUrl,
+      'director': director,
+      'year': year,
+      'genre': genre,
+      'rating': rating,
+    };
+  }
+
+  static Movie fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snapshot,
+    SnapshotOptions? options,
+  ) {
+    final data = snapshot.data();
+    return Movie(
+      id: data?['id'] ?? '',
+      title: data?['title'] ?? '',
+      description: data?['description'] ?? '',
+      imageUrl: data?['imageUrl'] ?? '',
+      director: data?['director'] ?? '',
+      year: data?['year'] ?? 0,
+      genre: data?['genre'] ?? '',
+      rating: (data?['rating'] ?? 0.0).toDouble(),
     );
   }
 }

@@ -5,8 +5,19 @@ import '../entities/movie.dart';
 import '../providers/auth_provider.dart';
 import '../providers/movie_provider.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    ref.read(movieProvider.notifier).loadMovies();
+  }
 
   void _confirmDelete(BuildContext context, WidgetRef ref, Movie movie) {
     showDialog(
@@ -71,7 +82,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final movies = ref.watch(movieProvider);
     final authState = ref.watch(authProvider);
     final userName = authState.currentUser?.name ?? 'Usuario';

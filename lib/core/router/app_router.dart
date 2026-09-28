@@ -32,12 +32,5 @@ final appRouter = GoRouter(
       path: '/add',
       builder: (context, state) => const MovieFormScreen(),
     ),
-    GoRoute(
-      path: '/edit',
-      builder: (context, state) {
-        final movie = state.extra as Movie;
-        return MovieFormScreen(movie: movie);
-      },
-    ),
   ],
 );
