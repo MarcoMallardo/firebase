@@ -2,14 +2,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../entities/movie.dart';
 
-final movieProvider = StateNotifierProvider<MovieNotifier, List<Movie>>((ref) {
+final movieProvider = NotifierProvider<MovieNotifier, List<Movie>>(() {
   return MovieNotifier(FirebaseFirestore.instance);
 });
 
-class MovieNotifier extends StateNotifier<List<Movie>> {
+class MovieNotifier extends Notifier<List<Movie>> {
   final FirebaseFirestore db;
 
-  MovieNotifier(this.db) : super([]);
+  MovieNotifier(this.db);
+
+  @override
+  List<Movie> build() {
+    return [];
+  }
 
   Future<void> loadMovies() async {
     final docs = db.collection('movies').withConverter(
