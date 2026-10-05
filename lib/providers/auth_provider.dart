@@ -102,6 +102,37 @@ class AuthNotifier extends Notifier<AuthState> {
   void clearError() {
     state = state.copyWith(clearError: true);
   }
+  void updateProfile({String? name, String? profilePictureUrl}) {
+    if (state.currentUser != null) {
+      final updatedUser = state.currentUser!.copyWith(
+        name: name,
+        profilePictureUrl: profilePictureUrl,
+      );
+      
+      final updatedList = state.registeredUsers.map((u) {
+        return u.id == updatedUser.id ? updatedUser : u;
+      }).toList();
+
+      state = state.copyWith(
+        currentUser: updatedUser,
+        registeredUsers: updatedList,
+      );
+    }
+  }
+
+  void updatePassword(String newPassword) {
+    if (state.currentUser != null) {
+      final updatedUser = state.currentUser!.copyWith(password: newPassword);
+      final updatedList = state.registeredUsers.map((u) {
+        return u.id == updatedUser.id ? updatedUser : u;
+      }).toList();
+
+      state = state.copyWith(
+        currentUser: updatedUser,
+        registeredUsers: updatedList,
+      );
+    }
+  }
 }
 
 final authProvider = NotifierProvider<AuthNotifier, AuthState>(() {

@@ -5,6 +5,7 @@ import '../../screens/home_screen.dart';
 import '../../screens/login_screen.dart';
 import '../../screens/movie_form_screen.dart';
 import '../../screens/register_screen.dart';
+import '../../screens/profile_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
@@ -20,6 +21,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/home',
       builder: (context, state) => const HomeScreen(),
+    ),
+    GoRoute(
+      path: '/profile',
+      builder: (context, state) => const ProfileScreen(),
     ),
     GoRoute(
       path: '/details',

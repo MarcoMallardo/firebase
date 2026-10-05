@@ -106,6 +106,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: InkWell(
+              onTap: () => context.push('/profile'),
+              borderRadius: BorderRadius.circular(20),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.deepPurple.shade100,
+                backgroundImage: authState.currentUser?.profilePictureUrl != null &&
+                        authState.currentUser!.profilePictureUrl!.isNotEmpty
+                    ? NetworkImage(authState.currentUser!.profilePictureUrl!)
+                    : null,
+                child: authState.currentUser?.profilePictureUrl == null ||
+                        authState.currentUser!.profilePictureUrl!.isEmpty
+                    ? const Icon(Icons.person, size: 20, color: Colors.deepPurple)
+                    : null,
+              ),
+            ),
+          ),
           IconButton(
             tooltip: 'Cerrar Sesión',
             icon: const Icon(Icons.logout),
