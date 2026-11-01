@@ -22,7 +22,10 @@ class MovieNotifier extends Notifier<List<Movie>> {
           toFirestore: (Movie movie, _) => movie.toFirestore(),
         );
     final movies = await docs.get();
-    state = movies.docs.map((d) => d.data()).toList();
+    state = movies.docs
+        .map((d) => d.data())
+        .where((movie) => !movie.disabled)
+        .toList();
   }
 
   Future<void> addMovie(Movie movie) async {
@@ -37,7 +40,7 @@ class MovieNotifier extends Notifier<List<Movie>> {
 
   Future<void> deleteMovie(String id) async {
     try {
-      await db.collection('movies').doc(id).delete();
+      await db.collection('movies').doc(id).update({'disabled': true});
       await loadMovies(); // Refresh list
     } catch (e) {
       print(e);

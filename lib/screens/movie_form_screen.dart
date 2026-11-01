@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
+import '../core/supabase_storage_service.dart';
 import '../entities/movie.dart';
 import '../providers/movie_provider.dart';
 
@@ -19,8 +22,11 @@ class _MovieFormScreenState extends ConsumerState<MovieFormScreen> {
   late TextEditingController _yearController;
   late TextEditingController _genreController;
   late TextEditingController _ratingController;
-  late TextEditingController _imageUrlController;
   late TextEditingController _descriptionController;
+
+  XFile? _selectedImage;
+  Uint8List? _imageBytes;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -30,7 +36,6 @@ class _MovieFormScreenState extends ConsumerState<MovieFormScreen> {
     _yearController = TextEditingController();
     _genreController = TextEditingController();
     _ratingController = TextEditingController(text: '8.0');
-    _imageUrlController = TextEditingController();
     _descriptionController = TextEditingController();
   }
 
@@ -41,22 +46,62 @@ class _MovieFormScreenState extends ConsumerState<MovieFormScreen> {
     _yearController.dispose();
     _genreController.dispose();
     _ratingController.dispose();
-    _imageUrlController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
 
-  void _saveMovie() {
-    if (_formKey.currentState!.validate()) {
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 1800,
+      imageQuality: 85,
+    );
+
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      setState(() {
+        _selectedImage = pickedFile;
+        _imageBytes = bytes;
+      });
+    }
+  }
+
+  Future<void> _saveMovie() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedImage == null || _imageBytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Seleccioná una imagen para la película'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    try {
+      // 1. Subir imagen a Supabase Storage (compatible con Web y Móvil)
+      final imageUrl = await SupabaseStorageService.uploadImage(
+        bytes: _imageBytes!,
+        fileName: _selectedImage!.name,
+        mimeType: _selectedImage!.mimeType,
+      );
+
+      // 2. Solo si la imagen se subió exitosamente,
+      //    crear el objeto Movie y guardarlo en Firebase
       final title = _titleController.text.trim();
       final director = _directorController.text.trim();
-      final year = int.tryParse(_yearController.text.trim()) ?? DateTime.now().year;
+      final year =
+          int.tryParse(_yearController.text.trim()) ?? DateTime.now().year;
       final genre = _genreController.text.trim();
       final rating = double.tryParse(_ratingController.text.trim()) ?? 0.0;
-      final imageUrl = _imageUrlController.text.trim();
       final description = _descriptionController.text.trim();
 
-      // Alta de película
       final newMovie = Movie(
         id: const Uuid().v4(),
         title: title,
@@ -66,17 +111,34 @@ class _MovieFormScreenState extends ConsumerState<MovieFormScreen> {
         rating: rating,
         imageUrl: imageUrl,
         description: description,
+        disabled: false,
       );
-      ref.read(movieProvider.notifier).addMovie(newMovie);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Película "$title" agregada exitosamente'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      await ref.read(movieProvider.notifier).addMovie(newMovie);
 
-      context.pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Película "$title" agregada exitosamente'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al subir la imagen: $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
     }
   }
 
@@ -198,37 +260,30 @@ class _MovieFormScreenState extends ConsumerState<MovieFormScreen> {
               ),
               const SizedBox(height: 16),
 
-              // URL de la Imagen
-              TextFormField(
-                controller: _imageUrlController,
-                decoration: InputDecoration(
-                  labelText: 'URL de la imagen o póster',
-                  prefixIcon: const Icon(Icons.image_outlined),
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.refresh),
-                    tooltip: 'Actualizar vista previa',
-                    onPressed: () => setState(() {}),
+              // Selector de imagen
+              OutlinedButton.icon(
+                onPressed: _isUploading ? null : _pickImage,
+                icon: const Icon(Icons.photo_library_outlined),
+                label: Text(
+                  _selectedImage == null
+                      ? 'Seleccionar imagen del dispositivo'
+                      : 'Cambiar imagen',
+                ),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: BorderSide(
+                    color: _selectedImage == null
+                        ? Colors.deepPurple
+                        : Colors.green,
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'La URL de la imagen es obligatoria';
-                  }
-                  if (!value.trim().startsWith('http://') &&
-                      !value.trim().startsWith('https://')) {
-                    return 'Debe ser una URL válida (http/https)';
-                  }
-                  return null;
-                },
-                onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 12),
 
-              // Vista previa de imagen
-              if (_imageUrlController.text.trim().isNotEmpty)
+              // Vista previa de imagen seleccionada (Compatible con Web y Móvil)
+              if (_imageBytes != null)
                 Container(
-                  height: 140,
+                  height: 180,
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(8),
@@ -237,10 +292,10 @@ class _MovieFormScreenState extends ConsumerState<MovieFormScreen> {
                   child: Row(
                     children: [
                       SizedBox(
-                        width: 100,
-                        height: 140,
-                        child: Image.network(
-                          _imageUrlController.text.trim(),
+                        width: 120,
+                        height: 180,
+                        child: Image.memory(
+                          _imageBytes!,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Container(
@@ -253,13 +308,31 @@ class _MovieFormScreenState extends ConsumerState<MovieFormScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'Vista previa de portada',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            color: Colors.grey,
-                          ),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.check_circle,
+                                color: Colors.green, size: 28),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Imagen seleccionada',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Se subirá al guardar la película',
+                              style: TextStyle(
+                                fontStyle: FontStyle.italic,
+                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -288,13 +361,24 @@ class _MovieFormScreenState extends ConsumerState<MovieFormScreen> {
               ),
               const SizedBox(height: 28),
 
-              // Botón Guardar
+              // Botón Guardar (con indicador de carga)
               ElevatedButton.icon(
-                onPressed: _saveMovie,
-                icon: const Icon(Icons.save),
-                label: const Text(
-                  'Registrar Película',
-                  style: TextStyle(
+                onPressed: _isUploading ? null : _saveMovie,
+                icon: _isUploading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.save),
+                label: Text(
+                  _isUploading
+                      ? 'Subiendo imagen y guardando...'
+                      : 'Registrar Película',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),

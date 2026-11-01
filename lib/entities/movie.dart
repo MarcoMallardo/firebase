@@ -9,6 +9,7 @@ class Movie {
   final int year;
   final String genre;
   final double rating;
+  final bool disabled;
 
   Movie({
     required this.id,
@@ -19,6 +20,7 @@ class Movie {
     required this.year,
     required this.genre,
     required this.rating,
+    this.disabled = false,
   });
 
   Movie copyWith({
@@ -30,6 +32,7 @@ class Movie {
     int? year,
     String? genre,
     double? rating,
+    bool? disabled,
   }) {
     return Movie(
       id: id ?? this.id,
@@ -40,6 +43,7 @@ class Movie {
       year: year ?? this.year,
       genre: genre ?? this.genre,
       rating: rating ?? this.rating,
+      disabled: disabled ?? this.disabled,
     );
   }
 
@@ -53,6 +57,7 @@ class Movie {
       'year': year,
       'genre': genre,
       'rating': rating,
+      'disabled': disabled,
     };
   }
 
@@ -70,6 +75,7 @@ class Movie {
       year: data?['year'] ?? 0,
       genre: data?['genre'] ?? '',
       rating: (data?['rating'] ?? 0.0).toDouble(),
+      disabled: data?['disabled'] ?? false,
     );
   }
 }
